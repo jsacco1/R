@@ -1,0 +1,111 @@
+#PREDICTED INCIDENCE, EXCLUDING THE FALSE POSITIVE MUTATIONS AS "UNKNOWN"
+
+rm(list = ls())
+library(xlsx)
+library(foreach)
+library(doParallel)
+library(matrixStats)
+library(ggplot2)
+library(scales)
+
+setwd("/[working directory]")
+
+#set the group for which we want to calculate incdience.
+#might want to make this an array, and iterate over all groups later
+Group = 'Pop'%population
+Disease = 'Disease'
+
+
+#change this to match your file
+
+InFile <- '[file name]'
+
+#read the variants
+Variants = read.xlsx(InFile, sheetName="Variants")
+
+
+##convert specific variant severity for different incidence calculations
+#Variants <- within(Variants, Severity[ID == 'p.[variant]'] <- "Mild")
+
+
+#load the phenotype matrix
+PhenotypeMatrix = read.xlsx(InFile, sheetName="PhenotypeMatrix")
+#set rownames for easy look-up of variants
+rownames(PhenotypeMatrix) <- PhenotypeMatrix[,1]
+PhenotypeMatrix[,1] <- NULL;
+
+#get the unique phenotypes so we can make a container for the incidence values
+Phenotypes = data.frame(as.character(unique(unlist(PhenotypeMatrix))))
+colnames(Phenotypes) = c("Phenotype")
+#now make the container for incidence values
+Incidence = data.frame(matrix(0, 1, max(dim(Phenotypes))))
+colnames(Incidence) = Phenotypes[,1]
+
+for (i in 1:nrow(Variants)){
+  for (j in 1:nrow(Variants)){
+    
+    Incidence[1,as.character(PhenotypeMatrix[ as.character(Variants[i,"Severity"]), as.character(Variants[j,"Severity"]) ])] = Incidence[1,as.character(PhenotypeMatrix[ as.character(Variants[i,"Severity"]), as.character(Variants[j,"Severity"]) ])] + Variants[i,Group]*Variants[j,Group]
+    
+  }
+  
+  
+}
+
+
+
+
+#this line removes the asymptomatic.  
+Incidence = Incidence[, colnames(Incidence) != "Asymptomatic"]
+#calculate the overall incidence
+Incidence[,length(Incidence)+1] = sum(Incidence) 
+colnames(Incidence)[length(Incidence)] = c("Overall")
+#transpose incidence
+Incidence = t(Incidence)
+colnames(Incidence) = "Rate"
+#add in name for each incidence, this was the rowname
+Incidence = data.frame(Group = row.names(Incidence), Incidence)
+#Temp = data.frame(rownames(Incidence))
+#colnames(Temp) = c("Group")
+#Incidence = cbind(Incidence, Temp)
+
+Incidence[,"onein"] = NA
+for (i in 1:nrow(Incidence)){
+  Incidence[i, "onein"] = paste("1 in", format(round(1/Incidence[i, "Rate"], digits=0),big.mark=",", trim=TRUE))
+  
+}
+
+Incidence$Group <- factor(Incidence$Group, levels = Incidence$Group)
+Incidence = Incidence[which(Incidence[,'Rate']>0), ]
+
+#plot
+#create log function for scaling allele frequencies
+mylog_trans <- function(base=exp(1), from=0) {
+  trans <- function(x) log(x, base)-from
+  inv <- function(x) base^(x+from)
+  trans_new("mylog", trans, inv, log_breaks(base=base), domain = c(base^from, Inf))
+}
+
+
+#format axes and title text
+black.bold.italic.16.text <- element_text(face = "bold.italic", color = "black", size = 16)
+black.bold.16.text <- element_text(face = "bold", color = "black", size = 16)
+
+cbPalette <- c("#F0E442", "#E69F00", "#56B4E9", "#CC79A7")
+#E69F00 = orange = severe
+#F0E442 = yellow = moderate
+#56B4E9 = blue = mild
+#CC79A7 = hopbush = overall
+#999999 = dark grey = unknown
+# "lightgrey" = mild
+
+bar <- ggplot(Incidence, aes(x = reorder(Group, Rate), y = Rate)) + 
+  geom_bar(fill = cbPalette, stat = "identity") + 
+  geom_text(aes(label=(format(onein)), hjust=0, vjust=0)) + 
+  theme_bw(base_size = 80) + 
+  coord_flip() + 
+  scale_y_continuous(trans=mylog_trans(base=10, from=-9), limits = c(1e-09, 7e-05), expand = c(0,0)) + 
+  labs(title = paste(Disease, "Incidence"), x="Phenotype", y="Incidence") +
+  theme(axis.title.x = black.bold.16.text, axis.title.y = black.bold.16.text , 
+  axis.text = black.bold.italic.16.text, title = black.bold.16.text, 
+  legend.background = element_rect(fill="gray90", size=.5, linetype="dotted")) +
+  theme(plot.title = element_text(hjust = 0.5))
