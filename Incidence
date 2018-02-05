@@ -24,12 +24,13 @@ InFile <- '[file name]'
 Variants = read.xlsx(InFile, sheetName="Variants")
 
 
-##convert specific variant severity for different incidence calculations
+#convert specific variant severity for different incidence calculations
 #Variants <- within(Variants, Severity[ID == 'p.[variant]'] <- "Mild")
 
 
-#load the phenotype matrix
-PhenotypeMatrix = read.xlsx(InFile, sheetName="PhenotypeMatrix")
+#load the phenotype matrix. A phenotype matrix is a table that shows the predicted phenotype of 
+#pairing two variants of known severities
+#Read [file] containing phenotype matrix
 #set rownames for easy look-up of variants
 rownames(PhenotypeMatrix) <- PhenotypeMatrix[,1]
 PhenotypeMatrix[,1] <- NULL;
