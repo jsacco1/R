@@ -1,0 +1,88 @@
+rm(list = ls()) #clear all environmental variables
+setwd("~/[working directory]")#change directory to whereever you are executing the script.
+
+#load required libraries
+library(xlsx)
+library(data.table)
+library(xlsx)
+library(foreach)
+library(doParallel)
+library(matrixStats)
+library(ggplot2)
+library(scales)
+library(tree)
+
+patients.info = read.xlsx([file]) #load your data
+
+#assign variables to HGVSp columns
+Sp1 <- patients.info$HGVSp1
+Sp2 <- patients.info$HGVSp2
+Place <- patients.info$Demographic
+
+##change name of disease for graph title
+Disease <- "SLOS"
+
+#dataframe of 3 categories
+Countrydf <- data.frame(Sp1, Sp2, Place)
+
+#empyty container
+Region = vector()
+
+#sort columns
+for (i in 1:nrow(Countrydf)){
+  
+  O <- order(Countrydf[i, ], decreasing = TRUE)
+  P <- paste(Countrydf[i, O[1]], Countrydf[i,O[2]], Countrydf[i,O[3]], sep=" ")
+  Region[i] = P
+  
+}
+
+#tabulated countries
+TabulatedCountriesdf = data.table(Countrydf)[, .N, keyby = Place]
+
+#######Creation of Two Categories using 2 data tables: those Places with greater than 2 counts and "All Others"
+Keepers = which(TabulatedCountriesdf$N > 2) 
+Nanners = setdiff(1:nrow(TabulatedCountriesdf), Keepers) #this command finds all below the threshold
+NannersCount = sum(TabulatedCountriesdf$N[Nanners])# this counts the number of places in that set.
+
+TabulatedCountriesdf = TabulatedCountriesdf[Keepers, ] #here I am limiting to the Keepers
+
+names(TabulatedCountriesdf) = c("Place", "Counts") # add more intuitive column names
+
+TabulatedCountriesdf[order(TabulatedCountriesdf$Counts, decreasing=TRUE),]
+
+Dummy = data.frame("All Others", NannersCount) #make the dummy row for infrequent places
+names(Dummy) = c("Place", "Counts") # add more intuitive column names
+
+TabulatedCountriesdf = rbind(TabulatedCountriesdf, Dummy) # now combine.
+
+#######
+#######
+
+#create color palette (this one is for colorblind people)
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7", "#CC6666", "#9999CC", "#56B4E9", "#009E73", "#0072B2", "#CC79A7", "#CC6666", "#9999CC", "#0072B2", "#D55E00", "#CC79A7", "#CC6666", "#9999CC", "#56B4E9", "#009E73", "#0072B2", "#CC79A7", "#CC6666", 
+               "#9999CC", "#E69F00", "#56B4E9", "#009E73", "#0072B2", "#D55E00", "#CC79A7", "#CC6666", "#9999CC", "#56B4E9", "#009E73", "#0072B2", "#CC79A7", "#CC6666", "#9999CC", "#0072B2", "#D55E00", "#CC79A7", "#CC6666", "#9999CC", "#56B4E9", "#009E73", "#0072B2", "#CC79A7", "#CC6666")
+
+black.bold.italic.16.text <- element_text(face = "bold.italic", color = "black", size = 16)
+black.bold.16.text <- element_text(face = "bold", color = "black", size = 16)
+
+slices <- c(TabulatedCountriesdf$Counts)
+lbls <- TabulatedCountriesdf$Place
+pct <- round(slices/sum(slices)*100, digits = 2) #create percentages
+#g <- paste(lbls, slices) #add observed counts to countries
+g <- paste(pct) #add percentages to countries
+g <- paste(g,"%",sep="") # add % sign to labels
+
+df <- as.data.frame(TabulatedCountriesdf)
+df <- na.tree.replace(df)
+
+
+ggplot(df, aes(x = reorder(Place, Counts), y = Counts, fill = Place)) + 
+  geom_bar(stat = "identity") + 
+  theme_bw() + coord_flip() + 
+  theme(axis.title.x = black.bold.16.text, 
+        axis.title.y = black.bold.16.text , axis.text = black.bold.italic.16.text, 
+        title = black.bold.16.text,  legend.position = "none") +
+  labs(title = paste(Disease, "Observed Ethnicity/Country Counts"), 
+       x="Ethnicity/Country",  y="Counts") + 
+  scale_fill_manual(values = cbPalette, name = "Ethnicity/Country") + geom_text(aes(label = g, hjust=1.0, vjust=0))
