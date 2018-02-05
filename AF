@@ -1,0 +1,74 @@
+Allele frequencies
+
+rm(list = ls())
+library(xlsx)
+library(foreach)
+library(doParallel)
+library(matrixStats)
+library(ggplot2)
+library(scales)
+
+#change to your working directory
+setwd("~/...") %working directory
+
+
+#set the group for which we want to calculate incidence.
+#might want to make this an array, and iterate over all groups later
+Group = 'Pop'%Population
+Disease = 'Disease'%disease of interest
+
+#change this to match your file
+InFile <- [file name]
+
+#read the variants
+Variants = read.xlsx(InFile, sheetName="Variants")
+
+#create Severity object
+Variants$Severity <- factor(Variants$Severity, levels = levels(Variants$Severity))
+
+
+#create log function for scaling allele frequencies
+mylog_trans <- function(base=exp(1), from=0) {
+  trans <- function(x) log(x, base)-from
+  inv <- function(x) base^(x+from)
+  trans_new("mylog", trans, inv, log_breaks(base=base), domain = c(base^from, Inf))
+}
+
+##create colorblind palette####
+cbPalette <- c("#56B4E9", "#E69F00", "#999999" )
+#E69F00 = orange = severe
+#F0E442 = yellow = moderate
+#56B4E9 = blue = mild
+#CC79A7 = hopbush(pink) = overall
+#999999 = dark grey = unknown
+# "lightgrey" = mild
+
+#format axes and title text
+black.bold.italic.16.text <- element_text(face = "bold.italic", color = "black", size = 16)
+black.bold.16.text <- element_text(face = "bold", color = "black", size = 16)
+
+#select columns and rows for graph
+Variants$id <- factor(Variants$ID, levels = Variants$ID[order(Variants[,Group])])
+
+%analyze most common variants
+Variants = Variants[1:15,]
+Variants = Variants[which(Variants[,Group]>0), ]
+
+ggplot(Variants, aes(x = id, y = eval(as.symbol(Group)), fill = Severity)) + 
+  geom_bar(stat = "identity") + 
+  geom_text(aes(label=(format( eval(as.symbol(Group)), scientific =TRUE, digits=3)), 
+                hjust=1.5, vjust=0)) + 
+  theme_bw() + 
+  coord_flip() + 
+  scale_fill_manual(values=cbPalette, name = "Severity", 
+                    breaks=c("Severe", "Moderate", "Mild", "Benign", "Unknown")) + 
+  scale_y_continuous(trans=mylog_trans(base=10, from=-5), 
+                     limits = c(1e-05, 7e-02), expand = c(0,0)) + 
+  labs(title = paste(Disease, "variants and their severities"),
+       x='',  y=paste(Group, "Frequency") ) +
+  theme(axis.title.x = black.bold.16.text, 
+        axis.title.y = black.bold.16.text , 
+        axis.text = black.bold.italic.16.text, 
+        title = black.bold.16.text,  
+        legend.position = "bottom",legend.background = 
+          element_rect(fill="gray90", size=.5, linetype="dotted")) 
