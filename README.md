@@ -1,6 +1,6 @@
 # R bioinformatics
 
 
-These projects were made in R Studio to graph incidence rates and allele frequencies. 
+This repository contains R scripts to calculate and graph incidence rates and allele frequencies. 
 
-I have also included a runthrough of a limma tutorial from the Bioconductor page
+I have also included a run-through of a limma tutorial. Limma is a BioConductor package commonly used in RNA-Seq pipelines for differential expression analysis. 
