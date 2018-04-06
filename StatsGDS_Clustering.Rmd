@@ -1,0 +1,165 @@
+---
+title: "RStatsGDS_Clustering"
+author: "James Sacco"
+date: "4/3/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+#Clustering
+
+Manhattan or Taxi Cab distance |x1 - x2| + |y1 - y2|
+
+Hierarchical clustering
+1) find the two points that are closest together, and connect them (use the average between those points, the averages of the y and x values, to make a new data point)
+2) find the next nearest distance, and iterate till all points are clustered
+3) results is a cluster dendrogram
+
+K-means clustering
+1) where are the centers of the clusters? assign points to the closest centers, and assign all the points to their closest centers. now, recalculate where centers should be. starting values can change the clusters. clusters can be easily overinterpreted and overused. 
+```{r}
+rm(list=ls())
+```
+
+```{r}
+#suppress package messages
+suppressPackageStartupMessages({
+  library(devtools)
+  library(Biobase)
+  library(dendextend)
+})
+
+
+##---load--------------------------------------
+library(gplots)
+library(devtools)
+library(Biobase)
+library("RSkittleBrewer", lib.loc="/Library/Frameworks/R.framework/Versions/3.3/Resources/library")
+library(org.Hs.eg.db)
+library(AnnotationDbi)
+library(dplyr)
+library(dendextend)
+
+#global palette
+tropical=  c('darkorange', 'dodgerblue', 'hotpink', 'limegreen', 'yellow')
+palette(tropical)
+
+par(pch=19)
+```
+
+#General principles
+How do we define close?
+How do we group things?
+How do we visualize the grouping?
+How do we interpret the grouping?
+
+#Load some data
+We will use this expression set to see how to use plots and tables to check for specific characteristics
+```{r}
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/bodymap_eset.RData")
+load(file=con)
+close(con)
+bm = bodymap.eset
+pdata=pData(bm)
+edata=as.data.frame(exprs(bm))
+fdata = fData(bm)
+ls()
+```
+
+Most important step
+ -Garbage in -> garbage out
+Distance or similarity
+ -Continuous - Euclidean distance
+ -Continous - correlation similarity
+ -Binary - manhattan distance
+ 
+Pick a distance/similarity that makes sense for your problem
+
+First we log transform and remove lowly expressed genes (require the mean count to be greater than 5000), then calculate Euclidean distance.
+
+Add 1, so we don't get undefined values
+```{r}
+edata = edata[rowMeans(edata) > 5000,]
+edata = log2(edata + 1)
+
+
+#Look at distance between either samples or genes. 
+#By default calculates the distance between rows.
+#If you want the Euclidean distance between samples, then we transpose of the rows
+dist1 = dist(t(edata))
+
+##Look at distance matrix (heatmap between samples). 
+#The diagonal line is the distance between the sample and itself (obv. distance is very low)
+#Samples that are closer are in white, while samples that are farther are in dark blue.
+
+colramp = colorRampPalette(c(3,"white",2))(9)
+heatmap(as.matrix(dist1),col=colramp,Colv=NA,Rowv=NA)
+```
+
+#Perform clustering
+Hierarchical clustering
+use hclust function
+```{r}
+hclust1 = hclust(dist1)
+```
+
+```{r}
+plot(hclust1)
+plot(hclust1, hang=-1)
+```
+
+```{r}
+dend = as.dendrogram(hclust1)
+dend = color_labels(hclust1,4,1:4) #see 4 clusters
+plot(dend)
+```
+
+```{r}
+dend = as.dendrogram(hclust1)
+dend = color_labels(hclust1,3,1:3) #see 3 clusters
+plot(dend)
+```
+
+```{r}
+labels_colors(dend) = c(rep(1,10), rep(2,9)) #use to define what samples get what colors
+```
+
+#k-Means Clustering
+
+```{r}
+kmeans1 = kmeans(edata,centers=3)
+
+names(kmeans1)
+```
+
+```{r}
+matplot(t(kmeans1$centers),col=1:3, type = "l",lwd = 3)
+```
+
+```{r}
+table(kmeans1$cluster)
+```
+
+```{r}
+newdata = as.matrix(edata)[order(kmeans1$cluster),]
+dim(newdata)
+```
+create heatmap of k-means cluster (genes similar to each other are clustered together)
+```{r}
+heatmap(newdata,col=colramp,Colv = NA, Rowv = NA)
+```
+
+Note:
+this algorithms isn't deterministic; it has a random start. so if you recalculate:
+```{r}
+kmeans2 = kmeans(edata,centers=3)
+table(kmeans1$cluster, kmeans2$cluster)
+```
+
