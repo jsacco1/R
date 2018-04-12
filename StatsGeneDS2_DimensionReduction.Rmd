@@ -1,0 +1,194 @@
+---
+title: "StatsGDS2_PreProcessing"
+author: "James Sacco"
+date: "4/11/2018"
+output: html_document
+
+###STATISTICS FOR GENOMIC DATA SCIENCE MODULE 2: DIMENSION REDUCTION FOR GENOMICS
+#Dimension Reduction
+
+Dependencies
+General Principles
+Load data
+Calculate singular vectors
+Look at the percent variance explained
+Plot two top principal components
+Plot PC1 vs PC2
+PCs vs SVs
+Outliers
+Further resources
+Session info
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.width=5, fig.height=5, size="footnotesize",
+                      warning=FALSE, message=FALSE)
+knitr::knit_hooks$set(small.mar = function(before, options, envir) {
+  if (before) graphics::par(mar = c(5,5,1.5,1))
+})
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+rm(list = ls())
+
+tropical= c('darkorange', 'dodgerblue', 'hotpink', 'limegreen', 'yellow')
+palette(tropical)
+par(pch=19)
+```
+
+
+#Dependencies
+```{r}
+library(devtools)
+library(Biobase)
+```
+
+
+#General principles
+can we find patterns in matrices of data?
+
+Dimension reduction
+You want to visualize and communicate patterns and relationships. 
+Matrix decompositions = reduce dimensions of data with visualizing or modeling of data.
+
+#Load data
+We will use this expression set that combines two studies Transcriptome genetics using second generation sequencing in a Caucasian population. and Understanding mechanisms underlying human gene expression variation with RNA sequencing.. These studies are different populations but we counted the same genes for both. Then we'll explore the differences.
+
+```{r}
+con =url("http://bowtie-bio.sourceforge.net/recount/ExpressionSets/montpick_eset.RData")
+load(file=con)
+close(con)
+mp = montpick.eset
+pdata=pData(mp)
+edata=as.data.frame(exprs(mp))
+fdata = fData(mp)
+ls()
+```
+
+#Calcuate the singular vector
+subtract rows with means less than 100 (reduce dataset)
+apply log transform
+```{r}
+edata = edata[rowMeans(edata) > 100, ]
+edata = log2(edata + 1)
+```
+
+Center data: remove row means (or column means), because the first singular value will always be the mean level. The mean level will always explain the most variation in a genomics experiment. 
+However, we want to see the variation between samples and/or genes.
+```{r}
+edata_centered = edata - rowMeans(edata)
+```
+Calculate the singular value 
+apply the svd function to calculate the singular value decomposition
+
+```{r}
+svd1 = svd(edata_centered)
+names(svd1) #has 3 parts: d is the diagonal matrix; u is the variation across samples; v is the variation across genes
+```
+
+output is the 129 singular values (129 colums)
+```{r}
+svd1$d
+```
+```{r}
+dim(svd1$v)
+```
+```{r}
+dim(svd1$u)
+```
+Plot the SVs
+```{r}
+plot(svd1$d, ylab="Singlar values", col=2)
+```
+
+The first singular value explains over 50% of the variance
+```{r}
+plot(svd1$d^2/sum(svd1$d^2), ylab = "Percent Variance Explained", col= 2)
+```
+
+two panels
+```{r}
+par(mfrow=c(1,2))
+```
+
+Plot the first two eigen genes or principal components
+```{r}
+plot(svd1$v[,1], col=2, ylab="1st PC")
+plot(svd1$v[,2], col=2, ylab="2nd PC")
+```
+
+Plot 1st PC versus 2nd PC
+```{r}
+plot(svd1$v[,1],svd1$v[,2],col=2,ylab="2nd PC",xlab="1st PC")
+```
+
+color PCs by what experiment they come from
+```{r}
+plot(svd1$v[,1],svd1$v[,2],ylab="2nd PC",xlab="1st PC", col=as.numeric(pdata$study))
+```
+
+box plot of 1st PC versus study variable (color by study variable)
+```{r}
+boxplot(svd1$v[,1] ~ pdata$study,border=c(1,2))
+points(svd1$v[,1] ~ jitter(as.numeric(pdata$study)),col=as.numeric(pdata$study))
+```
+
+PC
+```{r}
+pc1=prcomp(edata)
+plot(pc1$rotation[,1],svd1$v[,1])
+edata_centered2 = t(t(edata) - colMeans(edata))
+```
+
+plot 1st principle component versus the 1st singular vector from column-centered data, you will get exactly the PC 
+```{r}
+svd2 = svd(edata_centered2)
+plot(pc1$rotation[,1], svd2$v[,1],col=2)
+```
+
+outliers can drive the variation in a decompositions
+to demonstrate:
+```{r}
+edata_outlier = edata_centered
+edata_outlier[6,] = edata_centered[,6]*1000
+```
+
+```{r}
+svd3 = svd(edata_outlier)
+```
+
+Dataset without outlier vs dataset with outlier
+```{r}
+plot(svd1$v[1,], svd3$v[,1], xlab = "Without Outlier", ylab = "With Outlier")
+```
+
+the decomposition is looking for patterns in variation. here you can see the one gene that's the outlier
+```{r}
+plot(svd3$v[,1],edata_outlier[6,],col=4)
+```
+
+```{r}
+devtools::session_info()
+```
+
