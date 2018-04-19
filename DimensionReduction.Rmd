@@ -1,10 +1,10 @@
 ---
-title: "StatsGDS2_PreProcessing"
+title: "PreProcessing"
 author: "James Sacco"
 date: "4/11/2018"
 output: html_document
 
-###STATISTICS FOR GENOMIC DATA SCIENCE MODULE 2: DIMENSION REDUCTION FOR GENOMICS
+
 #Dimension Reduction
 
 Dependencies
