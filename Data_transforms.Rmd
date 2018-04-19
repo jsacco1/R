@@ -40,7 +40,7 @@ We would like continuous data to be nice and summetric like a normal distributio
 ```{r}
 hist(rnorm(1000),col=2)
 ```
-Realistically though most genomic data is skewed
+Realistically, most genomic data is skewed
 ```{r}
 hist(edata[,1],col=2,breaks=100)
 ```
@@ -98,7 +98,7 @@ There are a large number of other transforms depending on the type of data you a
 
 Variance stabilizing transforms which seek to remove a mean variance relationship among the data
 Box-Cox transforms which seek to make the data approximately Normally distributed
-rlog transform - unique to genomics count data, this is a regularized version of the log transform that seeks to minimize differences at low count levels.
+rlog transform - unique to genomics count data, this is a regularized version of the log transform that minimizes differences at low count levels.
 
 #Session information
 ```{r}
