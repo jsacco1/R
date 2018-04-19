@@ -1,5 +1,5 @@
 ---
-title: "RStatsGDS_Clustering"
+title: "Clustering"
 author: "James Sacco"
 date: "4/3/2018"
 output: html_document
