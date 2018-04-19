@@ -157,7 +157,7 @@ heatmap(newdata,col=colramp,Colv = NA, Rowv = NA)
 ```
 
 Note:
-this algorithms isn't deterministic; it has a random start. so if you recalculate:
+this algorithms isn't deterministic; it has a random start. so if you recalculate, you will get different clusters.
 ```{r}
 kmeans2 = kmeans(edata,centers=3)
 table(kmeans1$cluster, kmeans2$cluster)
