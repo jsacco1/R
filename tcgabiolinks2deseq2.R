@@ -25,6 +25,9 @@ query <- GDCquery(
 GDCdownload(query)
 data <- GDCprepare(query)
 
+# Data Processing ####
+
+# remove NA values
 data <- data[,!is.na(data$paper_IDH.status)]
 
 ddsSE <- DESeqDataSet(data, design = ~ paper_IDH.status)
