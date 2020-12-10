@@ -4,7 +4,6 @@ setwd("~/[working directory]")#change directory to whereever you are executing t
 #load required libraries
 library(xlsx)
 library(data.table)
-library(xlsx)
 library(foreach)
 library(doParallel)
 library(matrixStats)
