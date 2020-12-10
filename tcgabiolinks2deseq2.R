@@ -1,3 +1,5 @@
+rm(list = ls()) #clear all environmental variables
+
 # Title: TCGAbiolinks and DESeq2 Analysis ####
 
 # install with BiocManager::install(c("TCGAbiolinks", "DESeq2"))
