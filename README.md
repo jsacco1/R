@@ -28,4 +28,8 @@ DGE analysis with DESeq2, edgeR, etc. requires raw counts, not FPKM.
     Data Type: Masked Somatic Mutation
     Experimental Strategy: WXS OR Targeted Sequencing
     Access: open
+    
+### RNA-Seq Data Formats
+    raw counts (txt)
+    RSEM (available from TCGA RNA-Seq V2; can be used with edgeR
  
