@@ -31,5 +31,5 @@ DGE analysis with DESeq2, edgeR, etc. requires raw counts, not FPKM.
     
 ### RNA-Seq Data Formats
     raw counts (txt)
-    RSEM (available from TCGA RNA-Seq V2; can be used with edgeR
+    RSEM (available from TCGA RNA-Seq V2; can be used with edgeR)
  
