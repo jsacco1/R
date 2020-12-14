@@ -37,3 +37,6 @@ DGE analysis with DESeq2, edgeR, etc. requires raw counts, not FPKM.
     Question: Interpreting TCGA .rsem.genes.results and .rsem.genes.normalized_results files.
     https://www.biostars.org/p/106127/ 
     
+    Importing transcript abundance with tximport: RSEM
+    https://bioconductor.org/packages/release/bioc/vignettes/tximport/inst/doc/tximport.html#RSEM
+    
