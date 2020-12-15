@@ -22,7 +22,7 @@ https://portal.gdc.cancer.gov/repository?facetTab=files
 
 DGE analysis with DESeq2, edgeR, etc. requires raw counts, not FPKM. 
 
-### Query GDC for WXS or Targeted Sequencing
+### Query GDC for Whole exome sequenceing (WXS) or Targeted Sequencing
 
     Filters:
     Data Type: Masked Somatic Mutation
